@@ -1,0 +1,55 @@
+automation:
+  namespace: "almeza"
+  
+  kubernetes:
+    context: "almeza-cluster"
+    config_path: "/etc/kubernetes/config"
+    
+  infrastructure:
+    terraform_path: "/opt/almeza/terraform"
+    state_bucket: "almeza-terraform-state"
+    templates_path: "/opt/almeza/templates"
+  
+  ansible:
+    inventory_path: "/opt/almeza/inventory"
+    playbook_path: "/opt/almeza/playbooks"
+    roles_path: "/opt/almeza/roles"
+  
+  monitoring:
+    prometheus:
+      url: "http://prometheus:9090"
+      config_template: "prometheus.yml.j2"
+      rules_path: "/etc/prometheus/rules"
+    
+    grafana:
+      url: "http://grafana:3000"
+      api_key: "${GRAFANA_API_KEY}"
+      dashboards_path: "/opt/almeza/dashboards"
+  
+  backup:
+    path: "/var/backups/almeza"
+    retention_days: 30
+    schedule: "0 2 * * *"
+    
+    database:
+      host: "postgres"
+      user: "almeza"
+      name: "almeza_db"
+      password: "${DB_PASSWORD}"
+    
+    files:
+      path: "/opt/almeza/data"
+  
+  notifications:
+    slack:
+      webhook_url: "${SLACK_WEBHOOK_URL}"
+      channel: "#almeza-ops"
+    
+    email:
+      smtp_host: "smtp.gmail.com"
+      smtp_port: 587
+      username: "almeza@company.com"
+      password: "${SMTP_PASSWORD}"
+      recipients:
+        - "ops@company.com"
+        - "admin@company.com"

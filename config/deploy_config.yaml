@@ -1,0 +1,150 @@
+deploy:
+  docker:
+    enabled: true
+    registry: "ghcr.io/almeza"
+    auth:
+      username: "${DOCKER_USERNAME}"
+      password: "${DOCKER_PASSWORD}"
+    networks:
+      - name: "almeza"
+        driver: "bridge"
+    volumes:
+      data:
+        driver: "local"
+        opts:
+          type: "none"
+          device: "/var/lib/almeza"
+          o: "bind"
+  
+  kubernetes:
+    enabled: true
+    kubeconfig: "/etc/almeza/kubeconfig"
+    namespace_template: "almeza-{environment}"
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+    ingress:
+      enabled: true
+      class: "nginx"
+      annotations:
+        cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    monitoring:
+      enabled: true
+      prometheus:
+        scrape: true
+        port: 9090
+      grafana:
+        dashboard: true
+  
+  serverless:
+    enabled: true
+    provider: "aws"
+    aws:
+      region: "us-east-1"
+      profile: "almeza"
+      bucket: "almeza-deployments"
+    functions:
+      memory: 128
+      timeout: 30
+      runtime: "python3.9"
+      layers:
+        - "arn:aws:lambda:us-east-1:xxx:layer:almeza:1"
+  
+  environments:
+    development:
+      domain: "dev.almeza.ai"
+      replicas: 1
+      auto_scaling:
+        enabled: false
+    
+    staging:
+      domain: "staging.almeza.ai"
+      replicas: 2
+      auto_scaling:
+        enabled: true
+        min_replicas: 2
+        max_replicas: 4
+        target_cpu_utilization: 70
+    
+    production:
+      domain: "almeza.ai"
+      replicas: 3
+      auto_scaling:
+        enabled: true
+        min_replicas: 3
+        max_replicas: 10
+        target_cpu_utilization: 70
+  
+  templates:
+    kubernetes:
+      - deployment.yaml
+      - service.yaml
+      - ingress.yaml
+      - hpa.yaml
+      - configmap.yaml
+      - secret.yaml
+    
+    serverless:
+      - serverless.yml
+      - package.json
+      - requirements.txt
+  
+  monitoring:
+    enabled: true
+    interval: 60
+    alerts:
+      cpu_usage:
+        threshold: 80
+        duration: 300
+        severity: warning
+      memory_usage:
+        threshold: 80
+        duration: 300
+        severity: warning
+      error_rate:
+        threshold: 1
+        duration: 300
+        severity: error
+  
+  notifications:
+    slack:
+      enabled: true
+      webhook_url: "${SLACK_WEBHOOK_URL}"
+      channel: "#deployments"
+    
+    email:
+      enabled: true
+      from: "deploy@almeza.ai"
+      to:
+        - "ops@almeza.ai"
+  
+  hooks:
+    pre_deploy:
+      - name: "Validate config"
+        script: "scripts/validate_config.py"
+      - name: "Backup database"
+        script: "scripts/backup_db.py"
+    
+    post_deploy:
+      - name: "Run migrations"
+        script: "scripts/run_migrations.py"
+      - name: "Clear cache"
+        script: "scripts/clear_cache.py"
+    
+    on_failure:
+      - name: "Notify team"
+        script: "scripts/notify_failure.py"
+  
+  logging:
+    level: INFO
+    format: json
+    outputs:
+      - type: file
+        path: "/var/log/almeza/deploy.log"
+      - type: elasticsearch
+        url: "http://elasticsearch:9200"
+        index: "almeza-deploy-logs"
