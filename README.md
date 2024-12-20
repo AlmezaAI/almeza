@@ -1,4 +1,5 @@
 # Almeza AI Platform
+![Almeza](almeza.jpg)
 
 > A high-performance, scalable enterprise AI development and deployment platform
 
