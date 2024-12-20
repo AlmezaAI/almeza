@@ -374,5 +374,5 @@ pytest tests/
 
 ## 🌟 Future Development
 
-In the future, we may follow the successful path of previous projects like ELIZA by deploying tokens on pump.fun to support project development. CA: 7dfFBkbsmnGQoURtWboahoaLE6ZaydNhiHyTjYuJpump
+In the future, we may follow the successful path of previous projects like ELIZA by deploying tokens on pump.fun to support project development. CA: xxx
 
